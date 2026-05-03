@@ -1,0 +1,8 @@
+services:
+  wol-app:
+    build: .
+    ports:
+      - "4021:4021"
+    env_file:
+      - .env
+    restart: unless-stopped
