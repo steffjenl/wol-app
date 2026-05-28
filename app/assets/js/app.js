@@ -2,6 +2,10 @@
     const POLL_INTERVAL = 10000;
     const WAKE_POLL_INTERVAL = 5000;
     const toastCont   = document.getElementById('toastContainer');
+
+    if (!toastCont) {
+        return;
+    }
     const wakeButtonLabel = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24">
             <path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 14.93V16a1 1 0 0 0-2 0v.93A8 8 0 0 1 4.07 12H5a1 1 0 0 0 0-2h-.93A8 8 0 0 1 11 4.07V5a1 1 0 0 0 2 0v-.93A8 8 0 0 1 19.93 11H19a1 1 0 0 0 0 2h.93A8 8 0 0 1 13 16.93Z"/>
         </svg> Wake Computer`;
@@ -24,6 +28,10 @@
         const wakeBtn = card.querySelector('.js-wake-btn');
         const rdpBtn = card.querySelector('.js-rdp-btn');
         const lastAction = card.querySelector('.js-last-action');
+
+        if (!deviceId || !statusBadge || !statusText || !wakeBtn || !rdpBtn || !lastAction) {
+            return;
+        }
 
         let isOnline = null;
         let isWaking = false;
