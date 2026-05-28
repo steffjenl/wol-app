@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = json_decode(file_get_contents('php://input'), true) ?? [];
 $action = $input['action'] ?? ($_POST['action'] ?? '');
 $token  = $input['csrf_token'] ?? ($_POST['csrf_token'] ?? '');
+$deviceId = trim((string) ($input['device_id'] ?? ($_POST['device_id'] ?? 'windows-pc')));
 
 if (!verify_csrf($token)) {
     http_response_code(403);
@@ -26,25 +27,32 @@ if (!verify_csrf($token)) {
     exit;
 }
 
+$device = findDeviceById($deviceId);
+if ($device === null) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Unknown device']);
+    exit;
+}
+
 match ($action) {
-    'status' => handleStatus(),
-    'wake'   => handleWake(),
+    'status' => handleStatus($device),
+    'wake'   => handleWake($device),
     default  => badRequest(),
 };
 
-function handleStatus(): void {
-    $online = isOnline();
+function handleStatus(array $device): void {
+    $online = isOnline($device['ip']);
     echo json_encode(['online' => $online]);
 }
 
-function handleWake(): void {
-    $packet = buildMagicPacket(TARGET_MAC);
+function handleWake(array $device): void {
+    $packet = buildMagicPacket($device['mac']);
     $success = sendWol($packet);
     echo json_encode(['success' => $success]);
 }
 
-function isOnline(): bool {
-    $conn = @fsockopen(TARGET_IP, 3389, $errno, $errstr, 1);
+function isOnline(string $ip): bool {
+    $conn = @fsockopen($ip, 3389, $errno, $errstr, 1);
     if ($conn) {
         fclose($conn);
         return true;
@@ -67,6 +75,16 @@ function sendWol(string $packet): bool {
     $result = @socket_sendto($sock, $packet, strlen($packet), 0, BROADCAST_IP, 9);
     socket_close($sock);
     return $result !== false;
+}
+
+function findDeviceById(string $deviceId): ?array {
+    foreach (wol_devices() as $device) {
+        if (($device['id'] ?? '') === $deviceId) {
+            return $device;
+        }
+    }
+
+    return null;
 }
 
 function badRequest(): void {
